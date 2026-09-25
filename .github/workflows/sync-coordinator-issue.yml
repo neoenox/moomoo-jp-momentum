@@ -34,13 +34,13 @@ jobs:
           COORDINATOR_ISSUE: ${{ vars.COORDINATOR_ISSUE }}
           DISPATCH_ISSUE_NUMBER: ${{ github.event.inputs.issue_number }}
           DISPATCH_WRITE: ${{ github.event.inputs.write }}
-          EVENT_NAME: ${{ github.event_name }}
+          IS_SCHEDULE: ${{ github.event_name == 'schedule' }}
         run: |
           set -euo pipefail
 
           issue_number="${DISPATCH_ISSUE_NUMBER:-${COORDINATOR_ISSUE:-77}}"
           write_mode=false
-          if [[ "$EVENT_NAME" == "schedule" || "$DISPATCH_WRITE" == "true" ]]; then
+          if [[ "$IS_SCHEDULE" == "true" || "$DISPATCH_WRITE" == "true" ]]; then
             write_mode=true
           fi
 
