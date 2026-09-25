@@ -38,3 +38,9 @@ nul
 
 # DBバックアップ
 *.db.before-*
+
+# US grid research generated/local data
+config.us_grid.yaml
+config.us_grid.test.yaml
+# US grid cached market data (reproducible via --fetch-data)
+data/us_grid/
