@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       issue_number:
-        description: Coordinator issue number (default: vars.COORDINATOR_ISSUE or 77)
+        description: "Coordinator issue number (default: vars.COORDINATOR_ISSUE or 77)"
         required: false
         type: number
       write:
