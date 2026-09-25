@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import pytest
+import yaml
 
 from scripts.sync_coordinator_issue import (
     END_MARKER,
@@ -255,6 +256,8 @@ def test_replace_block_rejects_malformed_markers(body: str) -> None:
 
 def test_workflow_contract() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
+    # Catch YAML syntax errors before GitHub reports a zero-job configuration failure.
+    yaml.safe_load(text)
     assert "schedule:" in text
     assert "cron:" in text
     assert "workflow_dispatch:" in text
