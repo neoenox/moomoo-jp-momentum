@@ -262,4 +262,8 @@ def test_workflow_contract() -> None:
     assert "scripts/sync_coordinator_issue.py" in text
     assert "--write" in text
     assert "COORDINATOR_ISSUE" in text
+    assert "github.event.inputs.issue_number" in text
+    assert "github.event.inputs.write" in text
+    assert "${{ inputs." not in text
+    assert "github.event_name == 'schedule'" in text
     assert "issue view" in text or "sync_coordinator_issue" in text
