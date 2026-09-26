@@ -31,12 +31,29 @@ from futu import (
 )
 
 from .config import Config
+from .market_calendar import JST
 from .models import DailyBar, Quote
 
 logger = logging.getLogger(__name__)
 
 MAX_KLINE_PER_REQUEST = 1000
 BATCH_SLEEP_SECONDS = 1.0
+
+
+def _jpx_now(reference: Optional[datetime] = None) -> datetime:
+    """Return an aware datetime normalized to Japan Standard Time."""
+    if reference is None:
+        return datetime.now(tz=JST)
+    if reference.tzinfo is None:
+        return reference.replace(tzinfo=JST)
+    return reference.astimezone(JST)
+
+
+def _is_jpx_cash_trading_hours(reference: Optional[datetime] = None) -> bool:
+    now_jst = _jpx_now(reference)
+    return (9 <= now_jst.hour < 15) or (
+        now_jst.hour == 15 and now_jst.minute < 30
+    )
 
 
 class QuoteService:
@@ -362,13 +379,8 @@ class QuoteService:
             return pd.DataFrame()
 
         if not data.empty:
-            from datetime import timezone
-
-            now_jst = datetime.now(timezone.utc).astimezone()
-            hour = now_jst.hour
-            is_trading_hours = (9 <= hour < 15) or (
-                hour == 15 and now_jst.minute < 30
-            )
+            now_jst = _jpx_now()
+            is_trading_hours = _is_jpx_cash_trading_hours(now_jst)
             if is_trading_hours:
                 today = now_jst.strftime("%Y-%m-%d")
                 before = len(data)
@@ -516,11 +528,8 @@ class QuoteService:
             self.unsubscribe_symbols([code], [SubType.K_DAY])
 
         if not data.empty:
-            now_jst = datetime.now().astimezone()
-            hour = now_jst.hour
-            is_trading_hours = (9 <= hour < 15) or (
-                hour == 15 and now_jst.minute < 30
-            )
+            now_jst = _jpx_now()
+            is_trading_hours = _is_jpx_cash_trading_hours(now_jst)
             if is_trading_hours:
                 today = now_jst.strftime("%Y-%m-%d")
                 before = len(data)
