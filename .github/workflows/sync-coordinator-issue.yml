@@ -8,7 +8,7 @@ on:
       issue_number:
         description: "Coordinator issue number (default: vars.COORDINATOR_ISSUE or 77)"
         required: false
-        type: number
+        type: string
       write:
         description: Write the generated section to the issue (false = dry-run)
         required: false
@@ -31,12 +31,21 @@ jobs:
       - name: Sync Coordinator issue PR/merge section
         env:
           GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.inputs.issue_number || vars.COORDINATOR_ISSUE || '77' }}
-          WRITE_MODE: ${{ github.event_name == 'schedule' || github.event.inputs.write == 'true' }}
+          COORDINATOR_ISSUE: ${{ vars.COORDINATOR_ISSUE }}
+          DISPATCH_ISSUE_NUMBER: ${{ github.event.inputs.issue_number }}
+          DISPATCH_WRITE: ${{ github.event.inputs.write }}
+          IS_SCHEDULE: ${{ github.event_name == 'schedule' }}
         run: |
           set -euo pipefail
-          args=(--repo "$GITHUB_REPOSITORY" --issue-number "$ISSUE_NUMBER")
-          if [[ "$WRITE_MODE" == "true" ]]; then
+
+          issue_number="${DISPATCH_ISSUE_NUMBER:-${COORDINATOR_ISSUE:-77}}"
+          write_mode=false
+          if [[ "$IS_SCHEDULE" == "true" || "$DISPATCH_WRITE" == "true" ]]; then
+            write_mode=true
+          fi
+
+          args=(--repo "$GITHUB_REPOSITORY" --issue-number "$issue_number")
+          if [[ "$write_mode" == "true" ]]; then
             args+=(--write)
           fi
           python3 scripts/sync_coordinator_issue.py "${args[@]}"
