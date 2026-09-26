@@ -31,12 +31,26 @@ from futu import (
 )
 
 from .config import Config
+from .market_calendar import JST
 from .models import DailyBar, Quote
 
 logger = logging.getLogger(__name__)
 
 MAX_KLINE_PER_REQUEST = 1000
 BATCH_SLEEP_SECONDS = 1.0
+
+
+def _jpx_trading_clock(reference: Optional[datetime] = None) -> tuple[datetime, bool]:
+    """Return a JST clock and whether JPX cash trading is still in progress."""
+    current = reference or datetime.now(tz=JST)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=JST)
+    else:
+        current = current.astimezone(JST)
+    is_trading = (9 <= current.hour < 15) or (
+        current.hour == 15 and current.minute < 30
+    )
+    return current, is_trading
 
 
 class QuoteService:
@@ -362,13 +376,7 @@ class QuoteService:
             return pd.DataFrame()
 
         if not data.empty:
-            from datetime import timezone
-
-            now_jst = datetime.now(timezone.utc).astimezone()
-            hour = now_jst.hour
-            is_trading_hours = (9 <= hour < 15) or (
-                hour == 15 and now_jst.minute < 30
-            )
+            now_jst, is_trading_hours = _jpx_trading_clock()
             if is_trading_hours:
                 today = now_jst.strftime("%Y-%m-%d")
                 before = len(data)
@@ -516,11 +524,7 @@ class QuoteService:
             self.unsubscribe_symbols([code], [SubType.K_DAY])
 
         if not data.empty:
-            now_jst = datetime.now().astimezone()
-            hour = now_jst.hour
-            is_trading_hours = (9 <= hour < 15) or (
-                hour == 15 and now_jst.minute < 30
-            )
+            now_jst, is_trading_hours = _jpx_trading_clock()
             if is_trading_hours:
                 today = now_jst.strftime("%Y-%m-%d")
                 before = len(data)
