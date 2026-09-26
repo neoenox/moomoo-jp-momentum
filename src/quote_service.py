@@ -31,6 +31,7 @@ from futu import (
 )
 
 from .config import Config
+from .market_calendar import JST
 from .models import DailyBar, Quote
 
 logger = logging.getLogger(__name__)
@@ -362,9 +363,7 @@ class QuoteService:
             return pd.DataFrame()
 
         if not data.empty:
-            from datetime import timezone
-
-            now_jst = datetime.now(timezone.utc).astimezone()
+            now_jst = datetime.now(JST)
             hour = now_jst.hour
             is_trading_hours = (9 <= hour < 15) or (
                 hour == 15 and now_jst.minute < 30
@@ -516,7 +515,7 @@ class QuoteService:
             self.unsubscribe_symbols([code], [SubType.K_DAY])
 
         if not data.empty:
-            now_jst = datetime.now().astimezone()
+            now_jst = datetime.now(JST)
             hour = now_jst.hour
             is_trading_hours = (9 <= hour < 15) or (
                 hour == 15 and now_jst.minute < 30
