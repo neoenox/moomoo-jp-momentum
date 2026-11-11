@@ -1,5 +1,18 @@
 # moomoo-jp-momentum 現状メモ
 
+## GitHub default-branch snapshot (2026-11-12)
+
+この節を、GitHub上の再現可能な状態を判断する基準とする。
+
+- default branch: `master` / audited HEAD: `38e5f78d1d0823757ee22827750be8ec8df33fe2`
+- Git管理下の `data/symbols.json`: **366銘柄**（trade_candidate 345、benchmark 10、watch_only 7、excluded 4）。
+- Git管理下の `config.yaml`: `watchlist.max_symbols: 366`。
+- `data/moomoo.db` はGit treeに存在しない。したがって、現在のSQLite件数・enabled件数・daily_bars coverageは、このリポジトリのHEADからは検証できない。
+- 後段に記載された `871 total / 851 enabled / 851 daily_bars` は **2026-07-15時点のローカルDB報告値**であり、GitHubのclean checkoutに含まれるデータではない。現在値として断定しない。
+- `337/366` や `100→200→300→366` は過去の検証スナップショット／終了済み計画であり、現行の実行指示ではない。
+- 851銘柄をGitHubから再現可能にするには、別途、正本となる銘柄一覧・DB生成手順・データソースを明確化する必要がある。DBや個人データをそのままGitへ追加しない。
+
+
 ## 現在の到達点
 
 - ユニバースを 30銘柄から 366銘柄へ拡張済み
@@ -9,10 +22,10 @@
 - stale signals 問題は修正済み
 - `volume_ratio >= 1.5` の固定ハードゲートが BUY_CANDIDATE 0件の主因と判明
 - volume条件はハードゲートから外し、percentile / rank / relative volume によるスコアリング方式へ変更済み
-- **daily_bars coverage: 337/366 (92.1%)** — moomoo(127) + yfinance(210)
+- **Historical snapshot (2026-07-01): daily_bars coverage 337/366 (92.1%)** — moomoo(127) + yfinance(210)
 - **daily_bars に source/turnover_source カラム追加** — moomoo/actual と yfinance/estimated を区別
-- **indicators: 337 codes, 最新日付=2026-07-01**
-- **BUY_CANDIDATE: 21件** (337 indicators, 2026-07-01)
+- **Historical snapshot (2026-07-01): indicators 337 codes**
+- **Historical snapshot (2026-07-01): BUY_CANDIDATE 21件** (337 indicators)
 - **yfinance validation: PASS** (close_corr=0.9999, daily_return_corr=0.9999, MA agree=99.8%)
 - 既存テストは 100件パス (2026-07-15確認)
 - lint / pyright はクリーン (P0核心ファイル)
@@ -70,9 +83,9 @@
 ### P1-4: Result recording ✅
 - 詳細: `docs/validation/p1_validation_report.md`
 
-### P1 次のステップ
-1. 段階的比較計画に進む（100→200→300→366銘柄）
-2. moomoo quota回復後、不足29銘柄を補完
+### P1 次のステップ（旧計画・終了）
+- 旧段階的比較計画（100→200→300→366銘柄）は2026-07-15に終了済み。再開しない。
+- 851/851はローカルDBの過去報告値であり、GitHubの正本データではない。まずGit管理下の366銘柄とローカルDBの差を再現可能な手順で説明する。
 
 ## P2完了状況 (2026-07-15)
 
@@ -124,20 +137,18 @@
 - `scripts/recalc_indicators.py`
   - indicators再計算 + relative strength + DB保存
 
-## API制限
+## API制限（履歴スナップショット）
 
-moomoo OpenD / K-line 取得で以下の制限あり。
+以下は2026-07-01時点の記録。最新のOpenD接続・quota状態を確認した結果ではない。moomoo OpenD / K-line 取得で以下の制限あり。
 
 - 購読枠 100銘柄 → historyモードでは回避済み
 - レート制限 60 req / 30 sec → 1秒delayで対策済み
-- 履履歴K-line枠 **100 stocks/week** → 未解決。366銘柄全取得には複数週かかる可能性あり
-- **現状**: moomoo(127) + yfinance(210) = 337/366 (92.1%) まで補完済み
+- 履歴K-line枠 **100 stocks/week** → 未解決。366銘柄全取得には複数週かかる可能性あり
+- **2026-07-01時点の履歴値**: moomoo(127) + yfinance(210) = 337/366 (92.1%)。現状値として使わない。
 
-## 次の手順
+## 次の手順（2026-07-01時点の履歴コマンド）
 
-履順
-
-履歴K-line枠が回復したら、不足29銘柄をmoomooで補完する。
+以下は当時の不足29銘柄に対する手順メモ。現在の `data/symbols.json` とDB状態を再確認する前に、そのまま実行しない。
 
 ```bash
 uv run pytest
@@ -152,9 +163,9 @@ python universe_diagnostics.py --date 2026-07-08 --csv
 python historical_backtest.py --from 2026-05-21 --to 2026-06-30 --strategy all --csv
 ```
 
-## 段階的比較計画（終了）
+## 段階的比較計画（終了・ローカルDB履歴）
 
-旧計画「100 → 200 → 300 → 366銘柄」の段階的比較は終了した。
+旧計画「100 → 200 → 300 → 366銘柄」の段階的比較は終了した。以下の851件は2026-07-15時点のローカルDB報告値で、GitHub treeにはDB本体が含まれない。
 
 2026-07-15時点:
 - symbols: 871
@@ -299,7 +310,7 @@ BUY候補数が増えること自体は目的ではない。最重要指標は�
 - ペーパートレード: 継続
 - アプリ評価: お蔵入りではない
 - 現在の主目的: 戦略検証基盤
-- 次の勝負: 366銘柄フル取得後のバックテストと指数比較
+- 次の勝負: Git管理下の366銘柄と、未追跡ローカルDBの過去851銘柄報告値の差を再現可能にし、フォワード検証へ進む
 
 ## 資金効率比較結果（2026-07-01）
 
@@ -447,7 +458,7 @@ date, strategy_equity, benchmark_2559, benchmark_1306, daily_excess, cash_pct, p
 - **stop_lossルール変更は不要**
 - Period Cの劣後主因は相場環境とcash drag、stop_loss幅の問題ではない
 
-## moomoo実データ再取得準備状況（2026-07-01）
+## moomoo実データ再取得準備状況（2026-07-01の履歴スナップショット・現状未確認）
 
 ### DBカバレッジ
 | 項目 | 値 |
