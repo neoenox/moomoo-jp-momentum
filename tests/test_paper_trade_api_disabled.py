@@ -47,7 +47,7 @@ def test_place_order_is_disabled_even_when_config_enables_it(
 def test_cancel_order_is_disabled_without_opening_trade_context(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    manager = PaperTradeManager(cast(Config, _EnabledConfig(tmp_path / "paper.db"))))
+    manager = PaperTradeManager(cast(Config, _EnabledConfig(tmp_path / "paper.db")))
 
     def unexpected_trade_context(*args, **kwargs):
         pytest.fail("disabled OpenAPI cancel path must not create a trade context")
