@@ -8,7 +8,7 @@
 - 日本株の実取引は moomoo アプリで人間が手動実行します。
 - moomoo OpenAPI は主にデータ取得・接続確認用途です。
 - アプリ内の仮想注文・約定・cash・position は実注文ではありません。
-- `paper_order.py` などUS向けexperimental経路は、JP日次運用と分離して扱います。
+- `paper_order.py` / `src/paper_trade.py` のOpenAPI注文送信・取消は全市場でコード上無効です。
 - SIMULATE / REAL注文、trade unlock、Production scheduler、live DB cutover は別の明示承認が必要です。
 
 ```text
@@ -16,7 +16,7 @@
 候補抽出     : 本リポジトリ
 仮想検証     : SQLite virtual trade
 実取引       : moomooアプリで手動
-API注文      : JP運用では使用禁止
+API注文      : 全市場で使用禁止
 ```
 
 ## 主な機能
