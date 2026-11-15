@@ -1,16 +1,14 @@
 """
-ペーパートレード実機テストスクリプト
+旧OpenAPIペーパートレードテストスクリプト（注文操作は無効）
 
 ファイルパス: test_paper_trade.py
-何をするか: moomoo OpenAPIのSIMULATE環境でペーパートレードをテストする
+何をするか: 旧OpenAPI注文テスト。注文操作は実行せず終了する
 なぜ存在するか: APIのペーパートレード機能を確認するため
 関連ファイル: src/paper_trade.py, src/config.py
 
-注意:
-    - これはSIMULATE環境でのテストです
-    - 実資金は使用しません
-    - TrdEnv.REAL は使用しません
-    - 成行注文は行いません
+安全境界:
+    - OpenAPI経由のSIMULATE / REAL注文送信・取消は無効です
+    - 仮想取引はSQLiteのvirtual_order.pyを使用してください
 """
 
 import argparse
@@ -28,10 +26,8 @@ from src.paper_trade import PaperTradeManager
 def print_warning():
     """警告メッセージを表示する"""
     print()
-    print("  これはmoomoo OpenAPIのSIMULATE環境を使ったペーパートレード検証です。")
-    print("  実資金を使う注文ではありません。")
-    print("  TrdEnv.REAL は使用しません。")
-    print("  成行注文は行いません。")
+    print("  moomoo OpenAPIの注文送信・取消は無効です。")
+    print("  SQLiteのvirtual_order.pyで仮想取引を検証してください。")
     print()
 
 
@@ -237,6 +233,8 @@ def main() -> int:
     print("moomoo ペーパートレード実機テスト")
     print("=" * 60)
     print_warning()
+    print("[ERROR] OpenAPI注文操作は無効です。virtual_order.pyを使用してください。")
+    return 1
 
     # 設定読み込み
     try:
