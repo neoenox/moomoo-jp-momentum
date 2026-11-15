@@ -1,23 +1,20 @@
 """
-ペーパートレードモジュール（experimental）
+旧OpenAPIペーパートレードモジュール（注文操作は無効）
 
 ファイルパス: src/paper_trade.py
-何をするか: moomoo OpenAPIのSIMULATE環境でペーパートレードを行う
+何をするか: 旧OpenAPI注文経路。注文送信・取消はコードで無効化し、参照用途のみ残す
 なぜ存在するか: 実資金を使わずに取引ロジックを検証するため
 関連ファイル: config.py, data_store.py
 
-注意:
-    - TrdEnv.SIMULATE のみ使用
-    - TrdEnv.REAL は一切使用しない
-    - 実注文機能は実装しない
-    - JP市場ではこのモジュールは停止する
-    - US市場向けにexperimentalとして残す
+安全境界:
+    - OpenAPI経由のSIMULATE / REAL注文送信・取消は全市場で無効
+    - 検証はSQLite virtual_trade / virtual_order.pyを使用する
+    - list_ordersは読み取り専用の互換機能として残す
 """
 
 import logging
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -112,92 +109,11 @@ class PaperTradeManager:
         order_type: str = "LIMIT",
         market: str = "US",
     ) -> Optional[PaperOrder]:
-        """ペーパートレード注文を出す"""
-        market = market.upper()
-        side = side.upper()
-        order_type = order_type.upper()
-
-        if not self.enabled:
-            logger.error("ペーパートレードが無効です")
-            return None
-
-        if market in UNSUPPORTED_MARKETS:
-            logger.error(
-                "moomoo JP / FUTUJP では、OpenAPI経由の日本株SIMULATE注文が利用できないため、この機能は無効です。\n"
-                "アプリ内デモ取引とAPI SIMULATEは別物です。\n"
-                "取引はmoomooアプリで手動実行してください。"
-            )
-            return None
-
-        if side not in {"BUY", "SELL"}:
-            logger.error("sideは BUY または SELL を指定してください")
-            return None
-
-        if order_type not in {"LIMIT", "MARKET"}:
-            logger.error("order_typeは LIMIT または MARKET を指定してください")
-            return None
-
-        if order_type == "MARKET" and not self.allow_market_order:
-            logger.error("成行注文は無効です（allow_market_order=false）")
-            return None
-
-        if quantity <= 0:
-            logger.error("注文数量は1以上を指定してください")
-            return None
-
-        if quantity > self.max_order_quantity:
-            logger.error("注文数量が上限を超えています: %s > %s", quantity, self.max_order_quantity)
-            return None
-
-        if price * quantity > self.max_order_amount:
-            logger.error("注文金額が上限を超えています: %s > %s", price * quantity, self.max_order_amount)
-            return None
-
-        ctx = self._get_trade_context(market)
-        if ctx is None:
-            return None
-
-        try:
-            trd_side = TrdSide.BUY if side == "BUY" else TrdSide.SELL
-            order_type_enum = OrderType.MARKET if order_type == "MARKET" else OrderType.NORMAL
-
-            ret, data = ctx.place_order(
-                price=price,
-                qty=quantity,
-                code=code,
-                trd_side=trd_side,
-                order_type=order_type_enum,
-                trd_env=TrdEnv.SIMULATE,
-            )
-
-            if ret != RET_OK:
-                logger.error("注文失敗: %s", data)
-                return None
-            assert isinstance(data, pd.DataFrame)
-
-            order_id = str(data["order_id"].iloc[0])
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            order = PaperOrder(
-                order_id=order_id,
-                code=code,
-                side=side,
-                quantity=quantity,
-                price=price,
-                order_type=order_type,
-                status="SUBMITTED",
-                trd_env="SIMULATE",
-                submitted_at=now,
-                updated_at=now,
-                raw_response=str(data.to_dict()),
-            )
-
-            self._save_order(order)
-            logger.info("ペーパートレード注文完了: %s", order_id)
-            return order
-
-        finally:
-            ctx.close()
+        """OpenAPI order submission is intentionally disabled."""
+        logger.error(
+            "moomoo OpenAPI注文送信は無効です。SQLiteのvirtual_order.pyを使用してください。"
+        )
+        return None
 
     def list_orders(self, market: str = "US") -> list[PaperOrder]:
         """注文一覧を取得する"""
@@ -233,29 +149,11 @@ class PaperTradeManager:
             ctx.close()
 
     def cancel_order(self, order_id: str, market: str = "US") -> bool:
-        """注文をキャンセルする"""
-        ctx = self._get_trade_context(market)
-        if ctx is None:
-            return False
-
-        try:
-            ret, data = ctx.modify_order(
-                modify_order_op=1,
-                order_id=order_id,
-                qty=0,
-                price=0,
-                trd_env=TrdEnv.SIMULATE,
-            )
-
-            if ret != RET_OK:
-                logger.error("キャンセル失敗: %s", data)
-                return False
-
-            logger.info("注文キャンセル完了: %s", order_id)
-            return True
-
-        finally:
-            ctx.close()
+        """OpenAPI order cancellation is intentionally disabled."""
+        logger.error(
+            "moomoo OpenAPI注文取消は無効です。SQLiteのvirtual_order.pyを使用してください。"
+        )
+        return False
 
     def _save_order(self, order: PaperOrder) -> None:
         """注文をSQLiteに保存する"""
