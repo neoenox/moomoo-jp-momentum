@@ -9,7 +9,8 @@
 - moomoo OpenAPI は主にデータ取得・接続確認用途です。
 - アプリ内の仮想注文・約定・cash・position は実注文ではありません。
 - `paper_order.py` / `src/paper_trade.py` のOpenAPI注文送信・取消は全市場でコード上無効です。
-- SIMULATE / REAL注文、trade unlock、Production scheduler、live DB cutover は別の明示承認が必要です。
+- OpenAPIのSIMULATE / REAL注文送信・取消はコードで無効です。再導入には別途明示承認と専用レビューが必要です。
+- trade unlock、Production scheduler、live DB cutover も別の明示承認が必要です。
 
 ```text
 データ取得   : moomoo API / 対応データソース
