@@ -1,16 +1,14 @@
 """
-ペーパートレードCLIスクリプト（experimental）
+旧OpenAPIペーパートレードCLI（注文操作は無効）
 
 ファイルパス: paper_order.py
-何をするか: CLIからUS市場向けのSIMULATEペーパートレード注文を出力する
+何をするか: 旧OpenAPI注文CLI。注文操作は実行せず終了する
 なぜ存在するか: 実資金を使わずに取引ロジックを検証するため
 関連ファイル: src/paper_trade.py, src/config.py
 
-注意:
-    - これはSIMULATE環境でのみ動作します
-    - 実資金は使用しません
-    - TrdEnv.REAL は使用しません
-    - JP市場では常に停止します
+安全境界:
+    - OpenAPI経由のSIMULATE / REAL注文送信・取消は全市場で無効です
+    - 仮想取引はSQLiteのvirtual_order.pyを使用してください
 """
 
 import argparse
@@ -69,6 +67,8 @@ def main() -> int:
     print("Moomoo ペーパートレード（experimental）")
     print("=" * 60)
     print_warning()
+    print("[ERROR] OpenAPI注文操作は無効です。virtual_order.pyを使用してください。")
+    return 1
 
     if args.market == "JP":
         print_unsupported()
